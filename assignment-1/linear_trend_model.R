@@ -1,7 +1,5 @@
 
 library(ggplot2)
-
-setwd("C:/Users/Zosia/Desktop/DTU/S2/Time-Series-Analysis/Assignment1")
 source("plot_data.R")
 
 data <- Dtrain 
@@ -26,9 +24,11 @@ theta2_hat <- theta_hat[2, 1]
 # Covariance matrix and standard errors of the estimates
 N <- length(y) 
 sigma_hat_sq <- sum((y - X %*% theta_hat)^2) / (N - 2)  # Residual variance
-cov_theta <- sigma_hat_sq * solve(t(X) %*% X)
+var_theta <- sigma_hat_sq * solve(t(X) %*% X)
 std_err_theta1 <- sqrt(var_theta[1, 1])
 std_err_theta2 <- sqrt(var_theta[2, 2]) 
+
+cov_theta <- sigma_hat_sq * solve(t(X) %*% X)
 
 cat("Estimated Parameters:\n")
 cat("θ1 =", round(theta1_hat, 3), "with Std. Error =", round(std_err_theta1, 3), "\n")
