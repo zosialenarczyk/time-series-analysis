@@ -29,7 +29,7 @@ theta1_hat_wls <- theta_hat_wls[1, 1]
 theta2_hat_wls <- theta_hat_wls[2, 1]  
 
 #Standard errors for WLS estimates
-sigma_hat_sq_wls <- sum(weights * (y - X %*% theta_hat_wls)^2) / (sum(weights) - 2)
+sigma_hat_sq_wls <- sum(weights * (y - X %*% theta_hat_wls)^2) / (N - 2)
 var_theta_wls <- sigma_hat_sq_wls * solve(t(X) %*% W %*% X)
 std_err_theta1_wls <- sqrt(var_theta_wls[1, 1])
 std_err_theta2_wls <- sqrt(var_theta_wls[2, 2])
