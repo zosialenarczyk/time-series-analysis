@@ -169,8 +169,8 @@ ggsave("epsilon_lambda_RLS_plot.png")
 
 #Initialisation 
 
-#lambda_values <- seq(0.5, 0.99, by = 0.01)
-lambda_values <- c(0.5,0.7, 0.99)
+lambda_values <- seq(0.5, 0.99, by = 0.01)
+#lambda_values <- c(0.5,0.7, 0.99)
 
 RMSE <- numeric(N)
 
@@ -186,7 +186,7 @@ for (lambda in lambda_values) {
     theta_t <- theta_0
     R_t <- R_0
   # For loop to update the values of theta up to t = 3
-  for (t in 2:(N-k)) {
+  for (t in 1:(N-k)) {
     # Create the x_t vector (including the intercept term)
     x_t <- c(1, x[t]-2018)  # Here, assuming that x_t is the year and a constant (1) is included
     x_tk <- c(1, x[t+k]-2018)
@@ -196,9 +196,9 @@ for (lambda in lambda_values) {
     theta_t <- theta_t + solve(R_t) %*% x_t %*% (y[t] - t(x_t) %*% theta_t)
   }
   results_epsilon[[paste(lambda, k, sep = "_")]] <- data.frame(
-      t = (k+1):N, epsilon = epsilon[(k+1):N], lambda = lambda, k = k
+      t = (k):N, epsilon = epsilon[(k):N], lambda = lambda, k = k
     )
-  RMSE_k <- sqrt(mean(epsilon[(k+1):N]^2, na.rm = TRUE))
+  RMSE_k <- sqrt(mean(epsilon[(k):N]^2, na.rm = TRUE))
   results_RMSE[[paste(lambda, k, sep = "_")]] <- data.frame(
     k = k, RMSE = RMSE_k, lambda = lambda
   )
@@ -209,25 +209,11 @@ df_results_RMSE <- do.call(rbind, results_RMSE)
 
 # Plot the estimated mean trend line with the data
 ggplot(df_results_RMSE, aes(x = k, y = RMSE,color = as.factor(lambda))) +
-  geom_line(size = 1) +  
+  geom_line(size = 1) + 
   labs(title = expression("Evolution of RMSE"), 
        x = "k-step", 
        y = "RMSE",
-       color = expression(lambda))+
   theme_minimal() +   theme(plot.title = element_text(hjust = 0.5))
 
 ggsave("RMSE_lambda_RLS_plot.png")
-
-# Plot the estimated mean trend line with the data
-ggplot(df_results_epsilon, aes(x = k, y = epsilon,color = as.factor(lambda))) +
-  geom_point(size = 2) +  
-  labs(title = expression("Evolution of RMSE"), 
-       x = "k-step", 
-       y = "Epsilon",
-       color = expression(lambda))+
-  theme_minimal() +   theme(plot.title = element_text(hjust = 0.5))
-
-ggsave("RMSE_lambda_RLS_plot.png")
-
-
 
