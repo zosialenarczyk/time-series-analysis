@@ -39,10 +39,10 @@ cat("WLS Covariance Matrix:\n")
 cov_theta_wls <- sigma_hat_sq_wls * solve(t(X) %*% W %*% X)
 
 # Comparison between WLS and OLS covariance matrices
-cat("Variance-Covariance Matrix for WLS (first 2x2):\n")
+cat("Variance-Covariance Matrix for WLS (2x2):\n")
 print(round(cov_theta_wls, 3))
 
-cat("Variance-Covariance Matrix for OLS (first 2x2):\n")
+cat("Variance-Covariance Matrix for OLS (2x2):\n")
 print(round(cov_theta, 3))
 
 # 3.2 Plot weights vs. time
@@ -88,13 +88,17 @@ print("WLS Forecasted Values:")
 print(forecast_wls_df)
 
 # Plot training data, OLS, and WLS predictions
+
 ggplot() +
-  geom_point(data = data, aes(x = year, y = total), color = "blue") +  # Observations
-  geom_line(aes(x = x, y = theta1_hat_wls + theta2_hat_wls * x), color = "red", linetype = "dashed") +  # WLS trend
-  geom_line(data = forecast_wls_df, aes(x = year, y = prediction), color = "green") +  # WLS forecast
+  geom_point(data = data, aes(x = year, y = total), color = "black", size = 2, alpha = 0.7) +
+  geom_line(aes(x = x, y = theta1_hat + theta2_hat * x), color = "red", linetype = "dashed") +
+  geom_line(aes(x = x, y = theta1_hat_wls + theta2_hat_wls * x), color = "blue", linetype = "dashed") +
+  geom_line(data = forecast_df, aes(x = year, y = prediction), color = "red") +
+  geom_line(data = forecast_wls_df, aes(x = year, y = prediction), color = "blue") +
   geom_ribbon(data = forecast_wls_df, aes(x = year, ymin = lower_bound, ymax = upper_bound), alpha = 0.2, fill = "gray") +
-  labs(title = "WLS Trend Model and Forecast", x = "Year", y = "Total Vehicles (millions)") +
+  labs(title = "OLS vs WLS Trend Models and Forecast", x = "Year", y = "Total Vehicles (millions)") +
   theme_minimal() + theme(plot.title = element_text(hjust = 0.5))
+
 
 ggsave("wls_trend_forecast.png")
 

@@ -93,7 +93,3 @@ ggplot(data.frame(x, residuals), aes(x = x, y = residuals)) +
   theme_minimal() +   theme(plot.title = element_text(hjust = 0.5))
 
 ggsave("residual_plot.png")
-
-# 2.5 Comment:
-# The forecast assumes a linear trend continues, but real-world trends may show non-linearity or seasonality.
-# Residual analysis will help assess whether the assumptions of homoscedasticity and normality hold.
