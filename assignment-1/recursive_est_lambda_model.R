@@ -11,6 +11,8 @@ sink(tempfile())
 source("linear_trend_model.R")
 sink() 
 
+
+
 data <- Dtrain 
 x <- data$year   
 y <- data$total # total number of vehicles (in millions)
@@ -212,8 +214,106 @@ ggplot(df_results_RMSE, aes(x = k, y = RMSE,color = as.factor(lambda))) +
   geom_line(size = 1) + 
   labs(title = expression("Evolution of RMSE"), 
        x = "k-step", 
-       y = "RMSE",
+       y = "RMSE",) +
   theme_minimal() +   theme(plot.title = element_text(hjust = 0.5))
 
 ggsave("RMSE_lambda_RLS_plot.png")
 
+
+#5.7 Make predictions of the test set using RLS. You can use a single λ value for all horizons, or choose some way to have different values, and run the RLS, for each horizon
+#Dtest
+x <- Dtrain$year
+x_future <- seq(max(x) + 1/12, max(x) + 12/12, by = 1/12)  
+# X_future <- cbind(1, x_future)  
+
+
+x <- c(x,x_future)
+y <- Dtrain$total
+
+#Initialisation 
+R_0 <- matrix(c(0.1, 0, 0, 0.1), nrow = 2, ncol = 2)
+theta_0 <- matrix(c(0, 0), nrow = 2, ncol = 1)
+y_rls <- y
+lambda_values <- round(seq(from=0.5, to=0.99, length.out=5),2)
+
+results_y_rls <- list()
+
+# Loop to update theta and R
+theta_t <- theta_0
+R_t <- R_0
+
+for (lambda in lambda_values){
+  ## Initialisation
+  theta_t <- theta_0
+  R_t <- R_0
+  
+  for (t in 1:N) {
+    # Create the x_t vector (including the intercept term)
+    x_t <- c(1, x[t]-2018)  # Here, assuming that x_t is the year and a constant (1) is included
+    R_t <- lambda*R_t + x_t%*%t(x_t)
+    theta_t <- theta_t + solve(R_t) %*% x_t %*% (y[t] - t(x_t) %*% theta_t)
+  }
+  for (t in (N+1):(N+12)) {
+    # Create the x_t vector (including the intercept term)
+    x_t <- c(1, x[t]-2018)  # Here, assuming that x_t is the year and a constant (1) is included
+    y_rls[t] <- t(x_t) %*% theta_t ## prediction
+    R_t <- lambda*R_t + x_t%*%t(x_t)
+    # theta_t <- theta_t + solve(R_t) %*% x_t %*% (y_rls[t] - t(x_t) %*% theta_t) ## useless, cant update theta_t if we predict y[t+1] using thetha[t])
+  }
+  results_y_rls[[as.character(lambda)]] <- data.frame(year = x_future, 
+                                                      prediction = y_rls[(N+1):(N+length(x_future))],
+                                                      lambda = lambda,
+                                                      method="RLS")
+}
+df_results_y_rls <- do.call(rbind, results_y_rls)
+
+
+X <- cbind(rep(1,length(Dtrain$year)), Dtrain$year-2018)
+x <- Dtrain$year - 2018
+x_future <- seq(max(x) + 1/12, max(x) + 12/12, by = 1/12)  
+X_future <- cbind(1, x_future)  
+## WLS
+lambda <- 0.9 
+weights <- lambda^(rev(seq(0, N-1)))  
+W <- diag(weights) # Weight matrix is equal to inverse of the covariance matrix
+theta_hat_wls <- solve(t(X) %*% W %*% X) %*% (t(X) %*% W %*% Dtrain$total)
+y_forecast_wls <- X_future %*% theta_hat_wls  
+df_results_y_wls <- data.frame(year =x_future+2018, prediction = y_forecast_wls, method="WLS")
+
+
+## OLS
+theta_hat_ols <- solve(t(X) %*% X) %*% t(X) %*% Dtrain$total  # (X'X)^(-1) X'Y
+y_forecast_ols <- X_future %*% theta_hat_ols
+df_results_y_ols <- data.frame(year =x_future+2018, prediction = y_forecast_ols, method="OLS")
+
+df_y_all <- rbind(
+  df_results_y_rls,
+  df_results_y_wls,
+  df_results_y_ols
+)
+
+# Plot
+ggplot() +
+  # RLS
+  geom_line(data = df_y_all[df_y_all$method == "RLS",], 
+            aes(x = year, y = prediction, color = as.factor(lambda), linetype = method), size = 1) +
+  # WLS
+  geom_line(data = df_y_all[df_y_all$method == "WLS",], 
+            aes(x = year, y = prediction, linetype = method), color = "blue", size = 1) +
+  # OLS
+  geom_line(data = df_y_all[df_y_all$method == "OLS",], 
+            aes(x = year, y = prediction, linetype = method), color = "red", size = 1) +
+  # Training and Tes
+  geom_point(data = Dtrain, aes(x = year, y = total), color = "darkgrey") +  
+  geom_point(data = Dtest, aes(x = year, y = total), color = "black") +
+  labs(title = "RLS Forecast with WLS and OLS Predictions",
+       x = "Year",
+       y = "Total Vehicles (millions)",
+       color = "Lambda for RLS",
+       linetype = "Method") +
+  scale_linetype_manual(values = c("RLS" = "solid", "WLS" = "dashed", "OLS" = "dashed")) + 
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+        legend.position = "right")
+
+ggsave("rls_trend_forecast.png")
