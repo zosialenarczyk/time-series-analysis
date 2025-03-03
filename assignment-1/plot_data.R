@@ -2,7 +2,7 @@
 library(ggplot2)
 
 # set your working directory
-setwd("C:/Users/Zosia/Desktop/DTU/S2/Time-Series-Analysis/Projects/assignment-1")
+# setwd("C:/Users/Zosia/Desktop/DTU/S2/Time-Series-Analysis/Projects/assignment-1")
 
 D <- read.csv("DST_BIL54.csv")
 D$time <- as.POSIXct(paste0(D$time, "-01"), format="%Y-%m-%d", tz="UTC")
@@ -14,6 +14,9 @@ D$year <- 1900 + as.POSIXlt(D$time)$year + as.POSIXlt(D$time)$mon / 12
 test_start <- as.POSIXct("2024-01-01", tz="UTC")
 Dtrain <- D[D$time < test_start, ]
 Dtrain$total <- as.numeric(Dtrain$total) / 1E6
+Dtest <- D[D$time >= test_start, ]
+Dtest$total <- as.numeric(Dtest$total) / 1E6
+
 
 plot_data <- ggplot(Dtrain, aes(x = year, y = total)) +
   geom_line(color = "blue", size = 1) +
