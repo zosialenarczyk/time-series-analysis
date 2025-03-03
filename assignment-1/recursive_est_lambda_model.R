@@ -209,13 +209,15 @@ for (lambda in lambda_values) {
 df_results_epsilon <- do.call(rbind, results_epsilon)
 df_results_RMSE <- do.call(rbind, results_RMSE)
 
-# Plot the estimated mean trend line with the data
-ggplot(df_results_RMSE, aes(x = k, y = RMSE,color = as.factor(lambda))) +
+ggplot(df_results_RMSE, aes(x = k, y = RMSE, color = lambda, group = lambda)) +
   geom_line(size = 1) + 
+  scale_color_gradientn(colors = c("red", "orange", "yellow", "green", "cyan", "blue", "darkblue" ),
+                        name = expression(lambda)) +
   labs(title = expression("Evolution of RMSE"), 
        x = "k-step", 
-       y = "RMSE",) +
-  theme_minimal() +   theme(plot.title = element_text(hjust = 0.5))
+       y = "RMSE") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
 
 ggsave("RMSE_lambda_RLS_plot.png")
 
@@ -278,13 +280,13 @@ weights <- lambda^(rev(seq(0, N-1)))
 W <- diag(weights) # Weight matrix is equal to inverse of the covariance matrix
 theta_hat_wls <- solve(t(X) %*% W %*% X) %*% (t(X) %*% W %*% Dtrain$total)
 y_forecast_wls <- X_future %*% theta_hat_wls  
-df_results_y_wls <- data.frame(year =x_future+2018, prediction = y_forecast_wls, method="WLS")
+df_results_y_wls <- data.frame(year =x_future+2018, prediction = y_forecast_wls, method="WLS", lambda = NA)
 
 
 ## OLS
 theta_hat_ols <- solve(t(X) %*% X) %*% t(X) %*% Dtrain$total  # (X'X)^(-1) X'Y
 y_forecast_ols <- X_future %*% theta_hat_ols
-df_results_y_ols <- data.frame(year =x_future+2018, prediction = y_forecast_ols, method="OLS")
+df_results_y_ols <- data.frame(year =x_future+2018, prediction = y_forecast_ols, method="OLS", lambda = NA)
 
 df_y_all <- rbind(
   df_results_y_rls,
